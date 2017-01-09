@@ -1,0 +1,21 @@
+{
+  "name": "ffm",
+  "authors": [
+    "kudorori <kudokawai@gmail.com>"
+  ],
+  "description": "",
+  "main": "",
+  "license": "MIT",
+  "homepage": "",
+  "dependencies": {
+    "polymerfire": null,
+    "iron-elements": null,
+    "paper-elements": null,
+    "app-elements": null,
+    "gold-elements": null,
+    "mentallyfriendly-selectbox": null,
+    "google-map": "^1.1.13",
+    "lazy-page-manager": "https://github.com/kudorori/polymer-lazy-page-manager.git",
+    "iron-data-table": "^1.0.6"
+  }
+}

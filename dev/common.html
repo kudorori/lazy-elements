@@ -1,0 +1,469 @@
+<dom-module id="lazy-tabs">
+	<style include="sh-common-styles">
+		
+	</style>
+	<template>
+		<iron-location hash="{{hash}}" url-space-regex="!(#\!)" ></iron-location>
+		<paper-tabs selected="[[bindTab(hash,tabs)]]">
+			<template is="dom-repeat" items="[[tabs]]">
+				<paper-tab>
+					<a href$="[[prefix]][[item.href]]">
+						[[item.title]]
+					</a>
+				</paper-tab>
+			</template>
+		</paper-tabs>
+	</template>
+	<script>
+		Polymer({
+			is:"lazy-tabs",
+			properties:{
+				prefix:{
+					type:String,
+					value:"#!"
+				},
+				tabs:{
+					type:Object,
+					value:[]
+				}
+			},
+			bindTab:function(hash,tabs){
+				var result = 0;
+				
+				for(var key in tabs){
+					var tab = tabs[key];
+					var reg = new RegExp(tab.href+"$");
+					if(reg.test(hash)){
+						return key;
+					}
+				}
+				return result;
+			}
+		})
+	</script>
+</dom-module>
+
+<dom-module id="empty-page">
+	<style>
+		:host{
+			display:block;
+			height:100%;
+		}
+	</style>
+	<template>
+		<content select="lazy-pages"></content>
+	</template>
+	<script>
+		Polymer({
+			is:"empty-page",
+			behaviors:[
+				lazyPageBehavior
+			]
+		})
+	</script>
+</dom-module>
+
+<dom-module id="lazy-label">
+	<style>
+		:host{
+			display:block;
+			padding:6px 12px;
+			min-width:120px;
+			max-width:120px;
+		}
+		.label{
+			color:#888;
+			font-size:14px;
+			margin:3px 0px;
+			
+		}
+	</style>
+	<template>
+		<div class="label">
+			[[label]]
+		</div>
+		<div>
+			[[value]]
+			<content></content>
+		</div>
+	</template>
+	<script>
+		Polymer({
+			is:"lazy-label"
+		})
+	</script>
+</dom-module>
+
+<dom-module id="lazy-form">
+	<style include="sh-common-styles iron-flex iron-flex-alignment">
+		:host ::content paper-dropdown-menu,:host ::content paper-checkbox{
+			display:block;
+		}
+		:host ::content paper-checkbox{
+			padding:6px;
+		}
+		:host ::content h1,
+		:host ::content h2,
+		:host ::content h3,
+		:host ::content h4,
+		:host ::content h5,
+		:host ::content h6{
+			padding:6px 0px;
+			border-bottom:1px solid #ddd;
+		}
+	</style>
+	<template>
+		<iron-ajax 
+			id="ajax"
+			method="[[method]]"
+			content-type="[[contentType]]"
+			url="./test"
+			loading="{{loading}}"
+		></iron-ajax>
+		<lazy-panel>
+			<form 
+				id="form" 
+				is="iron-form"
+				enctype="multipart/form-data"
+				content-type="[[contentType]]"
+				on-iron-form-presubmit="presubmit">
+				<content id="content"></content>
+			</form>
+			<div style="text-align:right">
+				<paper-button on-click="submit">
+					<iron-icon icon="check"></iron-icon>
+					[[submitText]]
+				</paper-button>
+			</div>
+		</lazy-panel>
+	</template>
+	<script>
+		Polymer({
+			is:"lazy-form",
+			properties:{
+				contentType:{
+					value:"multipart/form-data"
+// 					value:"application/x-www-form-urlencoded"
+// 					value:"application/json"
+				},
+				submitText:{
+					type:String,
+					value:"submit"
+				}
+			},
+			submit:function(){
+				this.$.form.submit();
+			},
+			presubmit:function(e){
+				e.preventDefault();
+				var data = this.$.form.serialize();
+				var body = null;
+				var files = Polymer.dom(this).querySelectorAll("input[type='file']");
+				
+				switch(this.contentType){
+					case "multipart/form-data":
+						body = new FormData();
+						Object.keys(data).forEach(function(key){
+							body.append(key,data[key]);
+						});
+						files.forEach(function(file){
+							var name = file.getAttribute("name");
+							for(var i = 0 ; i<file.files.length;i++){
+								body.append(name,file.files[i]);
+							}
+							
+						});
+						break;
+					case "application/json":
+					case "application/x-www-form-urlencoded":
+						body = data;
+						break;
+				}
+				
+				this.$.ajax.body=body;
+				
+				this.$.ajax.generateRequest();
+				
+			}
+		})
+	</script>
+</dom-module>
+
+
+<dom-module id="date-selector">
+	<style include="sh-common-styles iron-flex iron-flex-alignment"></style>
+	<template>
+		<div class="layout horizontal center">
+			<template is="dom-if" if="[[!hiddenYear]]">
+				<div class="layout horizontal center">
+					<paper-icon-button icon="icons:chevron-left"></paper-icon-button>
+					<span>2016</span>
+					<paper-icon-button icon="icons:chevron-right">
+				</div>
+			</template>
+			<template is="dom-if" if="[[!hiddenMonth]]">
+				<div class="layout horizontal center">
+					<paper-icon-button icon="icons:chevron-left"></paper-icon-button>
+					<span>08</span>
+					<paper-icon-button icon="icons:chevron-right">
+				</div>
+			</template>
+			<template is="dom-if" if="[[!hiddenDate]]">
+				<div class="layout horizontal center">
+					<paper-icon-button icon="icons:chevron-left"></paper-icon-button>
+					<span>20</span>
+					<paper-icon-button icon="icons:chevron-right">
+				</div>
+			</template>
+		</div>
+	</template>
+	<script>
+		Polymer({
+			is:"date-selector",
+			properties:{
+				hiddenYear:{
+					type:Boolean,
+					value:false
+				},
+				hiddenMonth:{
+					type:Boolean,
+					value:false
+				},
+				hiddenDate:{
+					type:Boolean,
+					value:false
+				},
+				year:{
+					type:String,
+					notify:true
+				},
+				month:{
+					type:String,
+					notify:true
+				},
+				date:{
+					type:String,
+					notify:true
+				},
+				value:{
+					type:String,
+					notify:true
+				}
+			}
+		})
+	</script>
+</dom-module>
+
+
+<dom-module id="lazy-alert">
+	<style include="sh-common-styles iron-flex iron-flex-alignment">
+		:host ::content *[action]{
+			font-weight: bold;
+		}
+		:host{
+			margin:6px 0px;
+			display:block;
+		}
+	</style>
+	<template>
+		<paper-material class$="panel [[_type]] layout horizontal center">
+			<div class="flex">
+				<content select="[text]"></content>
+			</div>
+			<content select="[action]"></content>
+		</paper-material>
+	</template>
+	<script>
+		Polymer({
+			is:"lazy-alert",
+			properties:{
+				type:{
+					type:String,
+					value:""
+				},
+				error:{
+					type:Boolean,
+					value:false,
+					notify:true
+				},
+				success:{
+					type:Boolean,
+					value:false,
+					notify:true
+				},
+				warning:{
+					type:Boolean,
+					value:false,
+					notify:true
+				},
+				_type:{
+					type:String,
+					computed:"__bind(error,success,warning)"
+				}
+			},
+			__bind:function(a,b,c){
+				var check = [a,b,c];
+				var result =["error","success","warning"];
+				for(var key in check){
+					if(check[key]){
+						return result[key];
+					}
+				}
+			}
+		})
+	</script>
+</dom-module>
+
+<dom-module id="lazy-panel-group">
+	<style>
+		:host ::content .panel,:host ::content lazy-panel{
+			margin:0px;
+		}
+	</style>
+	<template>
+		<content></content>
+	</template>
+	<script>
+		Polymer({
+			is:"lazy-panel-group"
+		})
+	</script>
+</dom-module>
+
+<dom-module id="lazy-panel">
+	<style include="sh-common-styles iron-flex iron-flex-alignment">
+		:host{
+			margin:6px 0px;
+			display:block;
+		}
+	</style>
+	<template>
+		<paper-material class="panel">
+			<content></content>
+		</paper-material>
+	</template>
+	<script>
+		Polymer({
+			is:"lazy-panel"
+		})
+	</script>
+</dom-module>
+
+<dom-module id="lazy-datetime-input">
+	<style include="sh-common-styles iron-flex iron-flex-alignment">
+		:host {
+	        display: inline-block;
+	      }
+	      :host([hidden]) {
+	        display: none !important;
+	      }
+	      input[is="iron-input"] {
+	        font: inherit;
+	        outline: none;
+	        box-shadow: none;
+	        border: none;
+	        width: auto;
+	        text-align: center;
+	        width:30px;
+	      }
+	      #yyyy{
+		      width:40px;
+	      }
+	      .container >div{
+		      margin:0px 6px;
+	      }
+	</style>
+	<template>
+		<div class="container layout horizontal center">
+			<div class=" layout horizontal center">
+				<input id="yyyy" is="iron-input" bind-value="{{dt.yyyy}}" placeholder="YYYY" maxlength="4"  />
+				-
+				<input id="mm" is="iron-input" bind-value="{{dt.mm}}" placeholder="MM" maxlength="2" />
+				-
+				<input id="dd" is="iron-input" bind-value="{{dt.dd}}" placeholder="DD" maxlength="2" />
+			</div>
+			<div class="layout horizontal center">
+				<input id="hh" is="iron-input" bind-value="{{dt.hh}}" placeholder="H" maxlength="2" />
+				:
+				<input id="ii" is="iron-input" bind-value="{{dt.ii}}" placeholder="I" maxlength="2" />
+				:
+				<input id="ss" is="iron-input" bind-value="{{dt.ss}}" placeholder="S" maxlength="2" />
+			</div>
+		</div>
+	</template>
+	<script>
+		Polymer({
+			is:"lazy-datetime-input",
+			properties:{
+				dt:{
+					type:Object,
+					value:{
+						yyyy:"",
+						mm:"",
+						dd:"",
+						hh:"",
+						ii:"",
+						ss:""
+					}
+				}
+			},
+			observers:[
+				"__valueChanged(dt.*)"	
+			],
+			__valueChanged:function(e){
+				var paths = e.path.split(".");
+				if(paths.length==1){
+					return;
+				}
+				var id = paths[1];
+				var input = this.$[id];
+				if(input!=undefined){
+					
+				}
+				if(e.value.length==input.getAttribute("maxlength")){
+					
+					switch(id){
+						case "mm":
+							if(e.value>12){
+								this.set("dt."+id,12);
+// 								return;
+							}
+						break;
+						case "dd":
+							if(e.value>30){
+								this.set("dt."+id,30);
+// 								return;
+							}
+						break;
+						case "hh":
+							if(e.value>23){
+								this.set("dt."+id,23);
+// 								return;
+							}
+						break;
+						case "ii":
+						case "ss":
+							if(e.value>59){
+								this.set("dt."+id,59);
+// 								return;
+							}
+						break;
+					}
+					
+					
+					
+					var elements = Polymer.dom(this.root).querySelectorAll("input");
+					for(var key in elements){
+						var item = elements[key];
+						if(id==item.id){
+							elements[parseInt(key)+1].focus();
+						}
+					}
+				}
+				
+			}
+		})
+	</script>
+</dom-module>
+
+
